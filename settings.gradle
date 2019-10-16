@@ -1,0 +1,3 @@
+include ':app',
+        ':parallaxbackgroundviewpagerlibrary'
+project(':parallaxbackgroundviewpagerlibrary').projectDir = new File(settingsDir, '../parallaxbackgroundviewpagerlibrary')
