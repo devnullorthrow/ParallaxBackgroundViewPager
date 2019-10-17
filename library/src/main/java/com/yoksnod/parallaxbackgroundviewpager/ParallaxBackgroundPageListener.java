@@ -140,11 +140,14 @@ public class ParallaxBackgroundPageListener implements ViewPager.OnPageChangeLis
             isScrollToRight = true;
         }
 
-        if (!isScrollStarted && currentPageScrollState == ViewPager.SCROLL_STATE_DRAGGING) {
-            isScrollStarted = true;
+        boolean isDragScroll = isDragScroll();
+        isScrollStarted = isDragScroll;
+        if (isDragScroll) {
             shouldCalculateScrollDirection = true;
-        } else {
-            isScrollStarted = false;
         }
+    }
+
+    private boolean isDragScroll() {
+        return !isScrollStarted && currentPageScrollState == ViewPager.SCROLL_STATE_DRAGGING;
     }
 }
