@@ -14,21 +14,18 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ParallaxBackgroundViewPager pager;
-    private FragmentPagerAdapter adapter;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        pager = findViewById(R.id.pager);
+        ParallaxBackgroundViewPager pager = findViewById(R.id.pager);
 
         final List<Integer> items = new ArrayList<>();
         items.add(R.id.img3);
         items.add(R.id.img2);
         items.add(R.id.img1);
 
-        adapter = new ParallaxFragmentPagerAdapter(getSupportFragmentManager(), items);
+        FragmentPagerAdapter adapter = new ParallaxFragmentPagerAdapter(getSupportFragmentManager(), items);
         pager.setAdapter(adapter);
         pager.addOnPageChangeListener(new ParallaxBackgroundPageListener(this, pager, adapter, items));
         pager.startAutoScroll();
