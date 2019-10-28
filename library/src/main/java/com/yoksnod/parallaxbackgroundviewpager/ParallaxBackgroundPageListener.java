@@ -1,17 +1,19 @@
 package com.yoksnod.parallaxbackgroundviewpager;
 
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 public class ParallaxBackgroundPageListener implements ViewPager.OnPageChangeListener {
 
+    private static final String TAG = "ParallaxListener";
     private static final String ANDROID_SWITCHER_TAG_SEGMENT = "android:switcher:";
     private static final String SEPARATOR_TAG_SEGMENT = ":";
     private static final float POSITION_OFFSET_BASE = 0.5f;
@@ -48,27 +50,27 @@ public class ParallaxBackgroundPageListener implements ViewPager.OnPageChangeLis
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+        Log.d(TAG, "onPageScrolled position = " + position + " currentPagePosition = " + currentPagePosition + " shouldCalculateScrollDirection = " + shouldCalculateScrollDirection);
         recalculateScrollDirection(positionOffset, positionOffsetPixels);
 
         int scrollX = pager.getScrollX();
-        if (canScrollToLeft(scrollX) || isRightEdge(scrollX)) {
-            return;
-        }
+        int animatedItemIndex = isScrollToRight
+                ? Math.min(currentPagePosition, adapter.getCount() - 1)
+                : Math.max(0, currentPagePosition - 1);
+        Log.d(TAG, "onPageScrolled isRight = " + isScrollToRight + " anim index = " + animatedItemIndex);
 
-        int animatedItemIndex = isScrollToRight ? currentPagePosition : currentPagePosition - 1;
         setAlpha(animatedItemIndex, scrollX);
+
 
         if (isLeftEdge(scrollX)) {
             restoreInitialAlphaValues();
         }
     }
 
-    private boolean canScrollToLeft(int scrollX) {
-        return isLeftEdge(scrollX) && !isScrollToRight;
-    }
-
     private void setAlpha(int animatedItemIndex, int scrollX) {
         View child = findFragmentViewByIndex(animatedItemIndex);
+        if (child == null)
+            return;
         ViewPager.LayoutParams lp = (ViewPager.LayoutParams) child.getLayoutParams();
         if (lp.isDecor) {
             return;
@@ -77,11 +79,12 @@ public class ParallaxBackgroundPageListener implements ViewPager.OnPageChangeLis
         initCurrentAlpha(transformPos, animatedItemIndex);
     }
 
+    @Nullable
     private View findFragmentViewByIndex(int index) {
         String tag = makePagerFragmentTag(index, pager.getId());
         Fragment page = activity.getSupportFragmentManager().findFragmentByTag(tag);
-        if (page == null)
-            throw new NoSuchElementException("no such element for tag  : " + tag);
+        if (page == null || page.getView() == null)
+            return null;
 
         return page.getView();
     }
@@ -99,10 +102,6 @@ public class ParallaxBackgroundPageListener implements ViewPager.OnPageChangeLis
         } else {
             currentImage.setAlpha(ALPHA_OPAQUE - Math.abs(transformPos));
         }
-    }
-
-    private boolean isRightEdge(int scrollX) {
-        return scrollX == pager.getWidth() * adapter.getCount();
     }
 
 
@@ -130,24 +129,41 @@ public class ParallaxBackgroundPageListener implements ViewPager.OnPageChangeLis
         if (position == 0) {
             onPageScrollStateChanged(ViewPager.SCROLL_STATE_IDLE);
         }
+
+        Log.d(TAG, "onPageSelected position = " + position + " currentPagePosition = " + currentPagePosition + " pager current item = " + pager.getCurrentItem());
+
+        if (Math.abs(currentPagePosition - position) > 1) {
+            currentPagePosition = isScrollToRight
+                    ? Math.max(0, position - 1)
+                    : Math.min(position + 1, adapter.getCount() - 1);
+        }
+
     }
 
     @Override
     public void onPageScrollStateChanged(int state) {
         currentPageScrollState = state;
+        Log.d(TAG, "onPageScrollStateChanged state = " + PagerState.values()[state] + " currentPagePosition = " + currentPagePosition + " pager current item = " + pager.getCurrentItem());
+
+
         if (state == ViewPager.SCROLL_STATE_IDLE) {
             currentPagePosition = pager.getCurrentItem();
-            isScrollToRight = true;
         }
 
-        boolean isDragScroll = isDragScroll();
-        isScrollStarted = isDragScroll;
-        if (isDragScroll) {
+        boolean isIdle = isIdleScroll();
+        isScrollStarted = isIdle;
+        if (isIdle) {
             shouldCalculateScrollDirection = true;
         }
     }
 
-    private boolean isDragScroll() {
-        return !isScrollStarted && currentPageScrollState == ViewPager.SCROLL_STATE_DRAGGING;
+    private boolean isIdleScroll() {
+        return !isScrollStarted && currentPageScrollState == ViewPager.SCROLL_STATE_IDLE;
+    }
+
+    private enum PagerState {
+        SCROLL_STATE_IDLE,
+        SCROLL_STATE_DRAGGING,
+        SCROLL_STATE_SETTLING
     }
 }

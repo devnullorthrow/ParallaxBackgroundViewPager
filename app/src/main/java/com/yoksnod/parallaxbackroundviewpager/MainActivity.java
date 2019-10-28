@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
         FragmentPagerAdapter adapter = new ParallaxFragmentPagerAdapter(getSupportFragmentManager(), items);
         pager.setAdapter(adapter);
         pager.addOnPageChangeListener(new ParallaxBackgroundPageListener(this, pager, adapter, items));
-        pager.startAutoScroll();
+//        pager.startAutoScroll();
     }
 
     private class ParallaxFragmentPagerAdapter extends FragmentPagerAdapter {
